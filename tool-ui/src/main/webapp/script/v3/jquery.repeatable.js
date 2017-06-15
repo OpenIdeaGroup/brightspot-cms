@@ -467,7 +467,7 @@ The HTML within the repeatable element must conform to these standards:
                 });
             },
 
-            
+
             /**
              * Initialize an item. This should be called for each list item on the page,
              * plus it should be called for any new item added to the page.
@@ -479,6 +479,22 @@ The HTML within the repeatable element must conform to these standards:
 
                 var self = this;
                 var $item = $(element);
+                var $itemForm = $('<div/>', { 'class': 'itemEdit-vertical' }).insertAfter($item);
+                // Make service call on each slide
+
+                var cmsPath = window.location.pathname.split("/")[1];
+                $.ajax({
+                    url: "/" + cmsPath + "/contentFormFields",
+                    dataType: "html",
+                    data: {
+                        "id": $item.find("input[name*='.id']").attr('value'),
+                        "typeId": $item.find("input[name*='.typeId']").attr('value'),
+                        "data": $item.find("input[name*='.data']").attr('value'),
+                    },
+                    success: function (response) {
+                        $itemForm.html(response);
+                    },
+                });
 
                 // Create an image for the item if necessary,
                 // and set up other stuff for mode=preview
@@ -1734,6 +1750,7 @@ The HTML within the repeatable element must conform to these standards:
                 var $container = self.$element;
                 var carousel;
                 var $viewGrid;
+                var $viewVertical;
                 var $viewCarousel;
                 var $carouselTarget;
                 var $carouselContainer;
@@ -1758,6 +1775,7 @@ The HTML within the repeatable element must conform to these standards:
                 // Create buttons to switch between grid view and gallery view
                 $viewSwitcher = $('<span class="view-switcher">' +
                                   '<a href="#" class="view-switcher-active view-switcher-grid">Grid</a> | ' +
+                                  '<a href="#" class="view-switcher-vertical">Vertical</a> | ' +
                                   '<a href="#" class="view-switcher-gallery">Gallery</a>' +
                                   '</span>').appendTo($topButtonContainer);
                 
@@ -1766,6 +1784,10 @@ The HTML within the repeatable element must conform to these standards:
                 // The grid view will use the existing UL or OL
                 $viewGrid = self.dom.$list;
                 self.dom.$viewGrid = $viewGrid; // save for later
+
+                // The vertical view will also use the existing UL or OL as skeleton
+                $viewVertical = self.dom.$list;
+                self.dom.$viewVertical = $viewVertical; // save for later
 
                 // For the carousel view, create a new placeholder but hide it initially
                 $viewCarousel = $('<div/>', { 'class': 'viewCarousel' }).insertAfter(self.dom.$list).hide();
@@ -1817,9 +1839,13 @@ The HTML within the repeatable element must conform to these standards:
                     
                 });
 
-                // Set up events so user can switch between the carousel view and the grid view
+                // Set up events so user can switch between views
                 $viewSwitcher.on('click', '.view-switcher-grid', function(event) {
                     self.modePreviewShowGrid();
+                    return false;
+                });
+                $viewSwitcher.on('click', '.view-switcher-vertical', function(event) {
+                    self.modePreviewShowVertical();
                     return false;
                 });
                 $viewSwitcher.on('click', '.view-switcher-gallery', function(event) {
@@ -2243,12 +2269,28 @@ The HTML within the repeatable element must conform to these standards:
                     return;
                 }
 
-                // Mark the "Grid View" link as active and the "Gallery View" link as inactive
+                // Mark the "Grid View" link as active and the other link as inactive
                 self.dom.$viewSwitcher.find('a').removeClass('view-switcher-active').filter('.view-switcher-grid').addClass('view-switcher-active');
                 self.dom.$viewGrid.show();
                 self.dom.$viewCarousel.hide();
             },
 
+            /**
+             * When in preview mode, show the vertical view.
+             */
+            modePreviewShowVertical: function() {
+            //TODO
+                var self = this;
+
+                if (!self.modeIsPreview()) {
+                    return;
+                }
+
+                // Mark the "Vertical View" link as active and the other link as inactive
+                self.dom.$viewSwitcher.find('a').removeClass('view-switcher-active').filter('.view-switcher-vertical').addClass('view-switcher-active');
+                self.dom.$viewVertical.show();
+                self.dom.$viewCarousel.hide();
+            },
             
             /**
              * When in preview mode, show the carousel view.
@@ -2261,8 +2303,10 @@ The HTML within the repeatable element must conform to these standards:
                     return;
                 }
 
+                // Mark the "Gallery View" link as active and the other links as inactive
                 self.dom.$viewSwitcher.find('a').removeClass('view-switcher-active').filter('.view-switcher-gallery').addClass('view-switcher-active');
                 self.dom.$viewGrid.hide();
+                self.dom.$viewVertical.hide();
                 self.dom.$viewCarousel.show();
 
                 // In some cases carousel update doesn't work if carousel is hidden,
