@@ -182,138 +182,177 @@
       }
       
       > li {
-        background: white;
-        box-sizing: border-box;
-        float: left;
-        margin-right: 10px;
-        width: 210px;
-        padding: 4px 4px 22px 4px;
-        border:1px solid #ccc;
-        border-radius:2px;
-        min-height:170px;
-        
         counter-increment: @preview-counter;
+        width: auto;
+        padding: 0;
+        border: none;
+        margin-bottom: 0;
 
-        .previewable-image {
-          width: 200px;
-          height:150px;
-          cursor: pointer;
-          
-          // Resize the image so it's largest dimension fills the tile completely
-          // and keeps the correct aspect ratio.
-          object-fit: cover;
-
-          // In case src is blank set a background color
-          background-color:#ddd;
+        &.item-vertical-view {
+          position: relative;
+          min-height: 270px;
         }
 
-        .previewable-label {
-          margin:2px 4px 8px;
-          height:2.5em;
-          overflow:hidden;
-        }
-        
-        .previewable-label-prefix {
-          font-weight:bold;
-        }
-
-        .previewable-controls {
-          height:22px;
-          position:absolute;
-          width:100%;
-          left:0;
-          bottom:0;
-          background-color:#f8f8f8;
-        }
-
-        .previewable-control-edit {
-          .icon;
-          .icon-pencil;
-          .icon-only;
-          position:absolute;
-          right:30px;
-          bottom:2px;
-          cursor:pointer;
-          color:#999;
-        }
-        
-        > .repeatableLabel {
+        .item-preview {
+          position: relative;
+          background: white;
           box-sizing: border-box;
-          overflow: hidden;
-          padding-right: 30px;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
+          float: left;
+          margin-right: 10px;
+          width: 210px;
+          padding: 4px 4px 22px 4px;
+          border: 1px solid #ccc;
+          border-radius: 2px;
+          min-height: 170px;
 
-        > .removeButton {
-          .icon-only;
+          .previewable-image {
+            width: 200px;
+            height: 150px;
+            cursor: pointer;
 
-          left: auto;
-          right: 8px;
-          top:auto;
-          bottom:2px;
-          color:#999;
-        }
+            // Resize the image so it's largest dimension fills the tile completely
+            // and keeps the correct aspect ratio.
+            object-fit: cover;
 
-        .inputLabel {
-          display: block;
-          float: none;
-          margin: 0 0 5px 0;
-          padding: 5px;
-          width: auto;
-        }
+            // In case src is blank set a background color
+            background-color: #ddd;
+          }
 
-        .inputSmall {
-          margin-left: 0;
-          padding-left: 2px;
-        }
+          .previewable-label {
+            margin: 2px 4px 8px;
+            height: 2.5em;
+            overflow: hidden;
+          }
 
-        .inputNote {
-          margin-left: 2px;
-        }
+          .previewable-label-prefix {
+            font-weight: bold;
+          }
 
-        .objectId-select {
-          width: 100%;
-        }
+          .previewable-controls {
+            height: 22px;
+            position: absolute;
+            width: 100%;
+            left: 0;
+            bottom: 0;
+            background-color: #f8f8f8;
+          }
 
-        .objectId-edit {
-          margin-left: 0;
-        }
+          .previewable-control-edit {
+            .icon;
+            .icon-pencil;
+            .icon-only;
+            position: absolute;
+            right: 30px;
+            bottom: 2px;
+            cursor: pointer;
+            color: #999;
+          }
 
-        &.collapsed {
-          .inputLabel,
-          .objectId-clear {
-            display: none !important;
+          > .repeatableLabel {
+            box-sizing: border-box;
+            overflow: hidden;
+            padding-right: 30px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+
+          > .removeButton {
+            .icon;
+            .icon-remove;
+            .icon-only;
+            .link;
+
+            color: @color-remove;
+            position: absolute;
+            right: ((@input-height - @iconSize-default) / 2);
+            top: ((@input-height - @lineHeight-default) / 2);
+
+            .icon-only;
+
+            left: auto;
+            right: 8px;
+            top: auto;
+            bottom: 2px;
+            color: #999;
+          }
+
+          .inputLabel {
+            display: block;
+            float: none;
+            margin: 0 0 5px 0;
+            padding: 5px;
+            width: auto;
+          }
+
+          .inputSmall {
+            margin-left: 0;
+            padding-left: 2px;
+          }
+
+          .inputNote {
+            margin-left: 2px;
           }
 
           .objectId-select {
-            @img-height: 100px;
+            width: 100%;
+          }
 
-            display: block;
-            height: (@img-height + 2 * (@input-padding + @input-borderWidth));
+          .objectId-edit {
+            margin-left: 0;
+          }
 
-            img {
-              height: @img-height;
+          &.collapsed {
+            .inputLabel,
+            .objectId-clear {
+              display: none !important;
+            }
+
+            .objectId-select {
+              @img-height: 100px;
+
+              display: block;
+              height: (@img-height + 2 * (@input-padding + @input-borderWidth));
+
+              img {
+                height: @img-height;
+              }
             }
           }
-        }
 
-        &:before {
-          background: @color-overlay;
-          border: 2px solid white;
-          border-radius: 12px;
-          color: white;
-          content: counter(@preview-counter);
-          height: 24px;
-          left: 10px;
-          line-height: 20px;
-          min-width: 24px;
-          padding: 0 4px;
+          &:before {
+            background: @color-overlay;
+            border: 2px solid white;
+            border-radius: 12px;
+            color: white;
+            content: counter(@preview-counter);
+            height: 24px;
+            left: 10px;
+            line-height: 20px;
+            min-width: 24px;
+            padding: 0 4px;
+            position: absolute;
+            text-align: center;
+            top: 10px;
+          }
+        }
+        .item-edit-form {
+          min-height: 170px;
           position: absolute;
-          text-align: center;
-          top: 10px;
+          float: left;
+          left: 230px;
+          right: 0;
+          bottom: 0;
+          top: 0;
         }
+      }
+    }
 
+    > ol,
+    > ul {
+      &.view-vertical {
+        > li > div {
+          position: relative;
+        }
       }
     }
 

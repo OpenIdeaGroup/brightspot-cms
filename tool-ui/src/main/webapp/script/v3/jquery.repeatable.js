@@ -92,7 +92,6 @@ The HTML within the repeatable element must conform to these standards:
                 var $container = $(container);
                 var options = plugin.option();
                 var repeatable;
-                
                 // Create a copy of the repeatableUtility object
                 // This uses prototypal inheritance so we're not actually copying the entire object
                 // It allows each repeatable instance to have its own object that saves state
@@ -479,22 +478,6 @@ The HTML within the repeatable element must conform to these standards:
 
                 var self = this;
                 var $item = $(element);
-                var $itemForm = $('<div/>', { 'class': 'itemEdit-vertical' }).insertAfter($item);
-                // Make service call on each slide
-
-                var cmsPath = window.location.pathname.split("/")[1];
-                $.ajax({
-                    url: "/" + cmsPath + "/contentFormFields",
-                    dataType: "html",
-                    data: {
-                        "id": $item.find("input[name*='.id']").attr('value'),
-                        "typeId": $item.find("input[name*='.typeId']").attr('value'),
-                        "data": $item.find("input[name*='.data']").attr('value'),
-                    },
-                    success: function (response) {
-                        $itemForm.html(response);
-                    },
-                });
 
                 // Create an image for the item if necessary,
                 // and set up other stuff for mode=preview
@@ -532,6 +515,16 @@ The HTML within the repeatable element must conform to these standards:
 
                 // Add the remove control to the item
                 self.initItemRemove($item);
+
+                // Wrap image, label and controls
+                self.initWrapPreviewSection($item)
+
+                // Make service call to create full edit form
+                self.initItemEditForm($item);
+
+                // TODO
+                // Add upload and insert new item buttons under each item
+                //self.initItemControlButtons($item);
             },
 
 
@@ -702,6 +695,50 @@ The HTML within the repeatable element must conform to these standards:
 
                 input.appendTo($item);
 
+            },
+
+            initWrapPreviewSection: function(item) {
+                var $item = $(item);
+                var $img = $item.find('.previewable-image');
+                $img.wrap('<div class = "item-preview"></div>');
+                $item.find('.previewable-label').appendTo($img.parent());
+                $item.find('.previewable-controls').appendTo($img.parent());
+                $item.find('.removeButton').appendTo($img.parent());
+            },
+
+            initItemEditForm: function(item) {
+                var $item = $(item);
+
+                var $itemForm = $('<div/>', { 'class': 'item-edit-form' }).appendTo($item);
+
+                // Make service call on each slide
+                var cmsPath = window.location.pathname.split("/")[1];
+                $.ajax({
+                    url: "/" + cmsPath + "/contentFormFields",
+                    dataType: "html",
+                    data: {
+                        "typeId": $item.find('> input[type="hidden"][name$=".typeId"]').val(),
+                        "id": $item.find('> input[type="hidden"][name$=".typeId"]').val(),
+                    },
+                    success: function (response) {
+                        $itemForm.html(response);
+                        $itemForm.hide();
+                    },
+                });
+            },
+
+            initItemControlButtons: function(item) {
+                var $item = $(item);
+                // Create controls at the top
+                var $buttonContainer = $('<div/>', { 'class': 'repeatablePreviewControls-item' }).appendTo($item);
+
+                // Move the "action-upload" link into the top button container
+                //self.$element.find('> .action-upload').appendTo($buttonContainer);
+
+                // Add a placeholder for the "Add Item" button(s) to later be added to the top.
+                // Refer to initAddButton() to see how this is used.
+                $('<span/>', { 'class': 'addButtonContainer' }).appendTo($buttonContainer);
+                $buttonContainer.hide();
             },
 
             //==================================================
@@ -1775,7 +1812,7 @@ The HTML within the repeatable element must conform to these standards:
                 // Create buttons to switch between grid view and gallery view
                 $viewSwitcher = $('<span class="view-switcher">' +
                                   '<a href="#" class="view-switcher-active view-switcher-grid">Grid</a> | ' +
-                                  '<a href="#" class="view-switcher-vertical">Vertical</a> | ' +
+                                  '<a href="#" class="view-switcher-vertical">Vertical020</a> | ' +
                                   '<a href="#" class="view-switcher-gallery">Gallery</a>' +
                                   '</span>').appendTo($topButtonContainer);
                 
@@ -1962,7 +1999,7 @@ The HTML within the repeatable element must conform to these standards:
                 $item.find('> .objectInputs').appendTo($editContainer);
 
                 // If there are validation messages in the form,
-                // mark  the gride and gallery tiles to show an error state,
+                // mark  the grid and gallery tiles to show an error state,
                 // then select the item and show the edit form so user can correct the error.
                 if ($editContainer.find('.message-error').length) {
                     self.modePreviewMarkError($item);
@@ -2272,6 +2309,9 @@ The HTML within the repeatable element must conform to these standards:
                 // Mark the "Grid View" link as active and the other link as inactive
                 self.dom.$viewSwitcher.find('a').removeClass('view-switcher-active').filter('.view-switcher-grid').addClass('view-switcher-active');
                 self.dom.$viewGrid.show();
+                self.dom.$viewVertical.find('> li').removeClass('item-vertical-view');
+                self.dom.$viewGrid.find('.item-edit-form').hide();
+                self.dom.$viewGrid.find('.repeatablePreviewControls-item').hide();
                 self.dom.$viewCarousel.hide();
             },
 
@@ -2279,7 +2319,7 @@ The HTML within the repeatable element must conform to these standards:
              * When in preview mode, show the vertical view.
              */
             modePreviewShowVertical: function() {
-            //TODO
+
                 var self = this;
 
                 if (!self.modeIsPreview()) {
@@ -2290,6 +2330,14 @@ The HTML within the repeatable element must conform to these standards:
                 self.dom.$viewSwitcher.find('a').removeClass('view-switcher-active').filter('.view-switcher-vertical').addClass('view-switcher-active');
                 self.dom.$viewVertical.show();
                 self.dom.$viewCarousel.hide();
+
+                // Show edit form and add slide controls
+                self.dom.$viewVertical.find('> li').addClass('item-vertical-view');
+                var $editForm = self.dom.$viewVertical.find('.item-edit-form');
+                $editForm.show();
+                var $controlButtons = self.dom.$viewVertical.find('.repeatablePreviewControls-item');
+                $controlButtons.show();
+
             },
             
             /**
