@@ -524,7 +524,7 @@ The HTML within the repeatable element must conform to these standards:
 
                 // TODO
                 // Add upload and insert new item buttons under each item
-                //self.initItemControlButtons($item);
+                self.initItemControlButtons($item);
             },
 
 
@@ -721,6 +721,7 @@ The HTML within the repeatable element must conform to these standards:
                         "id": $item.find('> input[type="hidden"][name$=".typeId"]').val(),
                     },
                     success: function (response) {
+                        // Add full response html here, up to each project to customize what field should to be hidden
                         $itemForm.html(response);
                         $itemForm.hide();
                     },
@@ -728,17 +729,9 @@ The HTML within the repeatable element must conform to these standards:
             },
 
             initItemControlButtons: function(item) {
+                var self = this;
                 var $item = $(item);
-                // Create controls at the top
-                var $buttonContainer = $('<div/>', { 'class': 'repeatablePreviewControls-item' }).appendTo($item);
-
-                // Move the "action-upload" link into the top button container
-                //self.$element.find('> .action-upload').appendTo($buttonContainer);
-
-                // Add a placeholder for the "Add Item" button(s) to later be added to the top.
-                // Refer to initAddButton() to see how this is used.
-                $('<span/>', { 'class': 'addButtonContainer' }).appendTo($buttonContainer);
-                $buttonContainer.hide();
+                self.dom.$itemAddButtonContainer.clone().addClass('item-add-controls').appendTo($item);
             },
 
             //==================================================
@@ -1793,27 +1786,36 @@ The HTML within the repeatable element must conform to these standards:
                 var $carouselContainer;
                 var $viewSwitcher;
                 var $topButtonContainer;
+                var $itemAddButtonContainer;
                 
                 // We only need a carousel for "preview" mode
                 if (!self.modeIsPreview()) {
                     return;
                 }
 
-                // Create controls at the top
-                $topButtonContainer = $('<div/>', { 'class': 'repeatablePreviewControls' }).prependTo($container);
+                // TODO click add slides go to first available .editable-view
+                // TODO insert li element after parent li of $itemAddButtonContainer
+                // Create button controls to be insert at top and between each element;
+                $itemAddButtonContainer = $('<div/>', { 'class': 'repeatablePreviewControls' });
+                self.dom.$itemAddButtonContainer = $itemAddButtonContainer;
 
-                // Move the "action-upload" link into the top button container
-                $container.find('> .action-upload').appendTo($topButtonContainer);
+                // Move the "action-upload" link into the button container
+                $container.find('> .action-upload').appendTo($itemAddButtonContainer);
                 
-                // Add a placeholder for the "Add Item" button(s) to later be added to the top.
+                // Add a placeholder for the "Add Item" button(s) to later be added
                 // Refer to initAddButton() to see how this is used.
-                $('<span/>', { 'class': 'addButtonContainer' }).appendTo($topButtonContainer);
+                $('<span/>', { 'class': 'addButtonContainer' }).appendTo($itemAddButtonContainer);
+
+                // Insert a button container at top
+                $topButtonContainer = $itemAddButtonContainer.clone().prependTo($container);
 
                 // Create buttons to switch between grid view and gallery view
+                // Create buttons for available view, up to each project to decide which ones to hide if necessary
+                // First 'editable-view' will be used for editing a slide //TODO
                 $viewSwitcher = $('<span class="view-switcher">' +
-                                  '<a href="#" class="view-switcher-active view-switcher-grid">Grid</a> | ' +
-                                  '<a href="#" class="view-switcher-vertical">Vertical020</a> | ' +
-                                  '<a href="#" class="view-switcher-gallery">Gallery</a>' +
+                                  '<a href="#" class="view-switcher-active view-switcher-grid">Grid</a>' +
+                                  '<span class="view-switcher-vertical editable-view">|</span> <a href="#" class="view-switcher-vertical editable-view">Vertical028</a>' +
+                                  ' <span class="view-switcher-gallery editable-view">|</span> <a href="#" class="view-switcher-gallery editable-view">Gallery</a>' +
                                   '</span>').appendTo($topButtonContainer);
                 
                 self.dom.$viewSwitcher = $viewSwitcher; // Save for later
