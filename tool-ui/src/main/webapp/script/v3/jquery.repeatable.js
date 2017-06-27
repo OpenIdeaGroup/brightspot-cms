@@ -201,13 +201,14 @@ The HTML within the repeatable element must conform to these standards:
                     self.initItem(this);
                 });
 
-                // After we're done initilizing all the items,
-                // update the carousel if ncessary
+                // After we're done initializing all the items,
+                // update the carousel if necessary
                 self.modePreviewUpdateCarousel();
 
                 // Create the "Add Item" button(s)
                 self.initAddButton();
 
+                // Create index selector
                 self.initIndexer();
 
                 // Find the first editable view decided by project
@@ -491,6 +492,7 @@ The HTML within the repeatable element must conform to these standards:
                         var newIndex = self.dom.$indexer.find('select').val() - 1;
                         if (oldIndex != newIndex) {
                             self.repositionItem(oldIndex, newIndex, self.dom.$indexer.$activeItem);
+                            self.carousel.repositionTile(oldIndex + 1, newIndex + 1); // this api use index start from 1
                         }
                     }
                 })
