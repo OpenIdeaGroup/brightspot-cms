@@ -471,6 +471,10 @@ The HTML within the repeatable element must conform to these standards:
                 });
             },
 
+            /**
+             * Initialize the index selector that will be shared across item on vertical view.
+             * This indexer will show on hovering item and get current active item index;
+             */
             initIndexer: function () {
                 var self = this;
                 var $index = $('<div/>', {'class': 'item-index-select'});
@@ -483,13 +487,41 @@ The HTML within the repeatable element must conform to these standards:
                 self.dom.$indexer.$activeItem = null;
                 self.dom.$indexer.find('select').change(function () {
                     if (self.dom.$indexer.$activeItem) {
-                        var oldindex = self.dom.$indexer.$activeItem.index();
-                        var newindex = self.dom.$indexer.find('select').val() - 1;
-                        if (oldindex != newindex) {
-                            console.log("should move");
+                        var oldIndex = self.dom.$indexer.$activeItem.index();
+                        var newIndex = self.dom.$indexer.find('select').val() - 1;
+                        if (oldIndex != newIndex) {
+                            self.repositionItem(oldIndex, newIndex, self.dom.$indexer.$activeItem);
                         }
                     }
                 })
+            },
+
+            /**
+             * On change of indexer, reposition list items
+             */
+            repositionItem: function (oldIndex, newIndex, activeItem) {
+                var self = this;
+                var $activeItem = $(activeItem);
+                var $items = self.dom.$viewVertical.find('li');
+
+                if (!$activeItem) {
+                    return;
+                }
+
+                if (newIndex > $items.length) {
+                    return;
+                }
+
+                // Remove active item temporarily
+                $activeItem = $activeItem.detach();
+
+                // Add active item in the new position
+                if (newIndex === 0) {
+                    // Special case add to the front of the list
+                    self.dom.$viewVertical.prepend($activeItem);
+                } else {
+                    self.dom.$viewVertical.find('li').eq(newIndex - 1).after($activeItem);
+                }
             },
 
             // initActiveEditableView: function () {
