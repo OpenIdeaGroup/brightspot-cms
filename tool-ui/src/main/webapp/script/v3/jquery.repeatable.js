@@ -207,7 +207,12 @@ The HTML within the repeatable element must conform to these standards:
 
                 // Create the "Add Item" button(s)
                 self.initAddButton();
-                
+
+                self.initIndexer();
+
+                // Find the first editable view decided by project
+                // self.initActiveEditableView();
+
                 self.isInitialized = true;
             },
 
@@ -466,6 +471,36 @@ The HTML within the repeatable element must conform to these standards:
                 });
             },
 
+            initIndexer: function () {
+                var self = this;
+                var $index = $('<div/>', {'class': 'item-index-select'});
+                var $select = $('<select/>').appendTo($index);
+                for (var i = 1; i < self.dom.$list.find('li').length + 1; i++) {
+                    var $option = $('<option></option>').val(i).html(i);
+                    $select.append($option);
+                }
+                self.dom.$indexer = $index;
+                self.dom.$indexer.$activeItem = null;
+                self.dom.$indexer.find('select').change(function () {
+                    if (self.dom.$indexer.$activeItem) {
+                        var oldindex = self.dom.$indexer.$activeItem.index();
+                        var newindex = self.dom.$indexer.find('select').val() - 1;
+                        if (oldindex != newindex) {
+                            console.log("should move");
+                        }
+                    }
+                })
+            },
+
+            // initActiveEditableView: function () {
+            //     var self = this;
+            //     var $viewSwitcher = self.dom.$viewSwitcher;
+            //     var $activeEditableView = self.dom.$viewVertical;
+            //     if ($viewSwitcher.find('.editable-view').first().hasClass('view-switcher-gallery')) {
+            //         $activeEditableView = self.dom.$viewCarousel
+            //     }
+            //     self.dom.activeEditableView = $activeEditableView;
+            // },
 
             /**
              * Initialize an item. This should be called for each list item on the page,
@@ -522,6 +557,9 @@ The HTML within the repeatable element must conform to these standards:
                 // Make service call to create full edit form
                 self.initItemEditForm($item);
 
+                // self.initItemIndex($item);
+
+                self.initItemIndexerListener($item);
                 // TODO
                 // Add upload and insert new item buttons under each item
                 self.initItemControlButtons($item);
@@ -718,7 +756,7 @@ The HTML within the repeatable element must conform to these standards:
                     dataType: "html",
                     data: {
                         "typeId": $item.find('> input[type="hidden"][name$=".typeId"]').val(),
-                        "id": $item.find('> input[type="hidden"][name$=".typeId"]').val(),
+                        "id": $item.find('> input[type="hidden"][name$=".id"]').val(),
                     },
                     success: function (response) {
                         // Add full response html here, up to each project to customize what field should to be hidden
@@ -726,6 +764,21 @@ The HTML within the repeatable element must conform to these standards:
                         $itemForm.hide();
                     },
                 });
+            },
+
+            initItemIndexerListener: function (item) {
+                var self = this;
+                var $item = $(item);
+                var $preview = $item.find('.item-preview');
+                $preview.hover(function() {
+                    var $editForm = $item.find('.item-edit-form');
+                    if ($editForm.is(":hidden")) {
+                        return;
+                    }
+                    self.dom.$indexer.$activeItem = $item;
+                    self.dom.$indexer.find('select').val($item.index() + 1).change();
+                    $preview.prepend(self.dom.$indexer);
+                })
             },
 
             initItemControlButtons: function(item) {
@@ -1814,7 +1867,7 @@ The HTML within the repeatable element must conform to these standards:
                 // First 'editable-view' will be used for editing a slide //TODO
                 $viewSwitcher = $('<span class="view-switcher">' +
                                   '<a href="#" class="view-switcher-active view-switcher-grid">Grid</a>' +
-                                  '<span class="view-switcher-vertical editable-view">|</span> <a href="#" class="view-switcher-vertical editable-view">Vertical028</a>' +
+                                  '<span class="view-switcher-vertical editable-view">|</span> <a href="#" class="view-switcher-vertical editable-view">Vertical</a>' +
                                   ' <span class="view-switcher-gallery editable-view">|</span> <a href="#" class="view-switcher-gallery editable-view">Gallery</a>' +
                                   '</span>').appendTo($topButtonContainer);
                 
@@ -2314,6 +2367,7 @@ The HTML within the repeatable element must conform to these standards:
                 self.dom.$viewVertical.find('> li').removeClass('item-vertical-view');
                 self.dom.$viewGrid.find('.item-edit-form').hide();
                 self.dom.$viewGrid.find('.repeatablePreviewControls-item').hide();
+                self.dom.$indexer.hide();
                 self.dom.$viewCarousel.hide();
             },
 
@@ -2332,6 +2386,7 @@ The HTML within the repeatable element must conform to these standards:
                 self.dom.$viewSwitcher.find('a').removeClass('view-switcher-active').filter('.view-switcher-vertical').addClass('view-switcher-active');
                 self.dom.$viewVertical.show();
                 self.dom.$viewCarousel.hide();
+                self.dom.$indexer.show();
 
                 // Show edit form and add slide controls
                 self.dom.$viewVertical.find('> li').addClass('item-vertical-view');
@@ -2355,6 +2410,7 @@ The HTML within the repeatable element must conform to these standards:
 
                 // Mark the "Gallery View" link as active and the other links as inactive
                 self.dom.$viewSwitcher.find('a').removeClass('view-switcher-active').filter('.view-switcher-gallery').addClass('view-switcher-active');
+                self.dom.$indexer.hide();
                 self.dom.$viewGrid.hide();
                 self.dom.$viewVertical.hide();
                 self.dom.$viewCarousel.show();
