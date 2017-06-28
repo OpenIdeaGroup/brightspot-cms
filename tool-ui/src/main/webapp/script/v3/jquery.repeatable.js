@@ -526,16 +526,6 @@ The HTML within the repeatable element must conform to these standards:
                 }
             },
 
-            // initActiveEditableView: function () {
-            //     var self = this;
-            //     var $viewSwitcher = self.dom.$viewSwitcher;
-            //     var $activeEditableView = self.dom.$viewVertical;
-            //     if ($viewSwitcher.find('.editable-view').first().hasClass('view-switcher-gallery')) {
-            //         $activeEditableView = self.dom.$viewCarousel
-            //     }
-            //     self.dom.activeEditableView = $activeEditableView;
-            // },
-
             /**
              * Initialize an item. This should be called for each list item on the page,
              * plus it should be called for any new item added to the page.
@@ -2002,8 +1992,14 @@ The HTML within the repeatable element must conform to these standards:
                     }
 
                 });
-            },
 
+                // initializing $activeEditableView to be the first visible .editable-view, defaults to vertical view
+                var $activeEditableView = self.dom.$viewVertical;
+                if (self.dom.$viewSwitcher.find('.editable-view:visible').first().hasClass('view-switcher-gallery')) {
+                        $activeEditableView = self.dom.$viewCarousel
+                }
+                self.dom.$activeEditableView = $activeEditableView;
+            },
 
             /**
              * Initialize an item for mode=preview 
@@ -2033,7 +2029,7 @@ The HTML within the repeatable element must conform to these standards:
                     src: imageUrl,
                     alt: ''
                 }).on('click', function(){
-                    self.modePreviewEdit($item);
+                    self.modePreviewEditHandler($item);
                     return false;
                 }).appendTo($item);
                 
@@ -2054,7 +2050,7 @@ The HTML within the repeatable element must conform to these standards:
                     'data-object-id': itemId,
                     'data-dynamic-html': '${toolPageContext.createObjectLabelHtml(content)}'
                 }).on('click', function(){
-                    self.modePreviewEdit($item);
+                    self.modePreviewEditHandler($item);
                     return false;
                 }).appendTo($label);
                
@@ -2075,7 +2071,7 @@ The HTML within the repeatable element must conform to these standards:
                     'class': 'previewable-control-edit',
                     text: ''
                 }).on('click', function(event) {
-                    self.modePreviewEdit($item);
+                    self.modePreviewEditHandler($item);
                     return false;
                 }).appendTo($controls);
                 
@@ -2092,7 +2088,7 @@ The HTML within the repeatable element must conform to these standards:
                 // then select the item and show the edit form so user can correct the error.
                 if ($editContainer.find('.message-error').length) {
                     self.modePreviewMarkError($item);
-                    self.modePreviewEdit($item);
+                    self.modePreviewEditHandler($item);
                 }
             },
 
@@ -2193,10 +2189,42 @@ The HTML within the repeatable element must conform to these standards:
                 self.carousel.update();
 
                 // Switch to carousel view and select the tile to edit
-                self.modePreviewEdit($item);
+                self.modePreviewEditHandler($item);
             },
 
-            
+            modePreviewEditHandler: function(item) {
+                var self = this;
+                var $item = $(item);
+                if (self.dom.$activeEditableView == self.dom.$viewCarousel) {
+                    self.modePreviewEdit($item);
+                }
+                if (self.dom.$activeEditableView == self.dom.$viewVertical) {
+                    self.modePreviewEditVertical($item);
+                }
+            },
+
+            modePreviewEditVertical: function(item) {
+                var self = this;
+                var $item = $(item);
+
+                if (!self.modeIsPreview()) {
+                    return;
+                }
+
+                self.modePreviewShowVertical();
+                $item.focus();
+
+                // Scroll window to active item
+                var scrollPosition = $item.offset().top;
+                // Check if the header is overlaying at the top
+                // so we can scroll a little more to account for it
+                var headerHeight = $('.toolHeader').height();
+                if (headerHeight) {
+                    scrollPosition = scrollPosition - headerHeight - 6;
+                }
+                window.scrollTo(0, scrollPosition);
+            },
+
             /**
              * Edit an item for mode=preview
              *
