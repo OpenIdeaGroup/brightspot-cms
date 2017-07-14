@@ -484,7 +484,7 @@ The HTML within the repeatable element must conform to these standards:
                     var $option = $('<option></option>').val(i).html(i);
                     $select.append($option);
                 }
-                self.dom.$indexer = $index;
+                self.dom.$indexer = $index.hide();
                 self.dom.$indexer.$activeItem = null;
                 self.dom.$indexer.find('select').change(function () {
                     if (self.dom.$indexer.$activeItem) {
@@ -493,9 +493,11 @@ The HTML within the repeatable element must conform to these standards:
                         if (oldIndex != newIndex) {
                             self.repositionItem(oldIndex, newIndex, self.dom.$indexer.$activeItem);
                             self.carousel.repositionTile(oldIndex + 1, newIndex + 1); // this api use index start from 1
+                            self.verticalViewFocus(null, newIndex);
                         }
                     }
                 })
+
             },
 
             /**
@@ -522,7 +524,7 @@ The HTML within the repeatable element must conform to these standards:
                     // Special case add to the front of the list
                     self.dom.$viewVertical.prepend($activeItem);
                 } else {
-                    self.dom.$viewVertical.find('li').eq(newIndex - 1).after($activeItem);
+                    self.dom.$viewVertical.find('li.item-vertical-view').eq(newIndex - 1).after($activeItem);
                 }
             },
 
@@ -579,14 +581,11 @@ The HTML within the repeatable element must conform to these standards:
                 self.initWrapPreviewSection($item)
 
                 // Make service call to create full edit form
-                self.initItemEditForm($item);
+                self.initVerticalItem($item);
 
-                // self.initItemIndex($item);
-
-                self.initItemIndexerListener($item);
                 // TODO
                 // Add upload and insert new item buttons under each item
-                self.initItemControlButtons($item);
+                // self.initItemControlButtons($item);
             },
 
 
@@ -768,47 +767,24 @@ The HTML within the repeatable element must conform to these standards:
                 $item.find('.removeButton').appendTo($img.parent());
             },
 
-            initItemEditForm: function(item) {
-                var $item = $(item);
-
-                var $itemForm = $('<div/>', { 'class': 'item-edit-form' }).appendTo($item);
-
-                // Make service call on each slide
-                var cmsPath = window.location.pathname.split("/")[1];
-                $.ajax({
-                    url: "/" + cmsPath + "/contentFormFields",
-                    dataType: "html",
-                    data: {
-                        "typeId": $item.find('> input[type="hidden"][name$=".typeId"]').val(),
-                        "id": $item.find('> input[type="hidden"][name$=".id"]').val(),
-                    },
-                    success: function (response) {
-                        // Add full response html here, up to each project to customize what field should to be hidden
-                        $itemForm.html(response);
-                        $itemForm.hide();
-                    },
-                });
-            },
-
-            initItemIndexerListener: function (item) {
+            initVerticalItem: function(item) {
                 var self = this;
                 var $item = $(item);
+
+                // init item indexer
                 var $preview = $item.find('.item-preview');
                 $preview.hover(function() {
-                    var $editForm = $item.find('.item-edit-form');
-                    if ($editForm.is(":hidden")) {
+                    var $verticalItemEdit = $item.find('.itemEdit-vertical-container');
+                    if ($verticalItemEdit.is(":hidden")) {
                         return;
                     }
                     self.dom.$indexer.$activeItem = $item;
                     self.dom.$indexer.find('select').val($item.index() + 1).change();
                     $preview.prepend(self.dom.$indexer);
                 })
-            },
 
-            initItemControlButtons: function(item) {
-                var self = this;
-                var $item = $(item);
-                self.dom.$itemAddButtonContainer.clone().addClass('item-add-controls').appendTo($item);
+                // init add buttons
+                // self.dom.$itemAddButtonContainer.clone().addClass('item-add-controls').appendTo($item);
             },
 
             //==================================================
@@ -1507,8 +1483,8 @@ The HTML within the repeatable element must conform to these standards:
                 // Load the item if necessary,
                 // or if it's already loaded do some stuff immediately
                 if (!self.itemIsCollapsed($item)) {
-                    
-                    self.itemLoad($item).always(function(){
+                    $item.data("currentView", "gallery");
+                    self.itemLoadOrMove($item).always(function(){
                     
                         // Trigger the resize event since we changed the item size
                         $item.resize();
@@ -1557,7 +1533,6 @@ The HTML within the repeatable element must conform to these standards:
                 return $item.hasClass('collapsed');
             },
 
-            
             /**
              * Checks an item to determine if it needs to load some dynamic content,
              * and loads it if necessary.
@@ -1603,7 +1578,6 @@ The HTML within the repeatable element must conform to these standards:
 
                     // Get the data to pass to the URL
                     data = $input.val();
-                    
                     // Remove the attribute and data so we don't fetch again
                     $input.removeAttr('data-form-fields-url');
                     $input.val('');
@@ -1643,6 +1617,39 @@ The HTML within the repeatable element must conform to these standards:
                 return promise;
             },
 
+            /**
+             * Checks if an item edit form has already been loaded in vertical view or gallery view
+             * if not, load it using itemLoad function
+             * if yes, move it to location
+             * @param {Element|jQuery object} item has data of current view;
+             **/
+            itemLoadOrMove: function(item, location) {
+                var self = this;
+                var $item = $(item);
+                var $location = $(location);
+                var currentView = $item.data("currentView");
+                var itemIndex = $item.index();
+                var $editForm;
+                if (currentView == "vertical") {
+                    var $sourceViewItemList = self.dom.$viewCarousel.find('> .carousel-target').find('> .carousel-target-items')
+                        .find('> .itemEdit');
+                    if ($sourceViewItemList.length > itemIndex) {
+                        $editForm = $sourceViewItemList.eq(itemIndex).find('> .objectInputs');
+                    }
+                } else {
+                    // currently there're only vertical view and gallery view that will use these function
+                    $editForm = $item.find('> .itemEdit-vertical-container').find('> .objectInputs');
+                }
+
+                // if an edit form is already loaded in source view, move it
+                if ($editForm.length > 0) {
+                    $location.append($editForm);
+                    return self.itemLoad($item, $location);
+                }
+
+                // otherwise load item
+                return self.itemLoad($item, $location);
+            },
             
             /**
              * Toggle the remove state for an item.
@@ -1870,7 +1877,6 @@ The HTML within the repeatable element must conform to these standards:
                     return;
                 }
 
-                // TODO click add slides go to first available .editable-view
                 // TODO insert li element after parent li of $itemAddButtonContainer
                 // Create button controls to be insert at top and between each element;
                 $itemAddButtonContainer = $('<div/>', { 'class': 'repeatablePreviewControls' });
@@ -1888,7 +1894,7 @@ The HTML within the repeatable element must conform to these standards:
 
                 // Create buttons to switch between grid view and gallery view
                 // Create buttons for available view, up to each project to decide which ones to hide if necessary
-                // First 'editable-view' will be used for editing a slide //TODO
+                // First 'editable-view' will be used for editing a slide
                 $viewSwitcher = $('<span class="view-switcher">' +
                                   '<a href="#" class="view-switcher-active view-switcher-grid">Grid</a>' +
                                   '<span class="view-switcher-vertical editable-view">|</span> <a href="#" class="view-switcher-vertical editable-view">Vertical</a>' +
@@ -1965,6 +1971,12 @@ The HTML within the repeatable element must conform to these standards:
                     return false;
                 });
                 $viewSwitcher.on('click', '.view-switcher-gallery', function(event) {
+                    // Load all itemEdit forms and make first one active
+                    $(self.dom.$list.find('> li').get().reverse()).each(function () {
+                        var $item = $(this);
+                        $item.data("currentView", "gallery");
+                        self.modePreviewEdit($item, false);
+                    });
                     self.modePreviewShowCarousel();
                     return false;
                 });
@@ -1993,12 +2005,12 @@ The HTML within the repeatable element must conform to these standards:
 
                 });
 
-                // initializing $activeEditableView to be the first visible .editable-view, defaults to vertical view
-                var $activeEditableView = self.dom.$viewVertical;
+                // initializing $defaultEditableView to be the first visible .editable-view, defaults to vertical view
+                var $defaultEditableView = self.dom.$viewVertical;
                 if (self.dom.$viewSwitcher.find('.editable-view:visible').first().hasClass('view-switcher-gallery')) {
-                        $activeEditableView = self.dom.$viewCarousel
+                        $defaultEditableView = self.dom.$viewCarousel
                 }
-                self.dom.$activeEditableView = $activeEditableView;
+                self.dom.$defaultEditableView = $defaultEditableView;
             },
 
             /**
@@ -2071,7 +2083,14 @@ The HTML within the repeatable element must conform to these standards:
                     'class': 'previewable-control-edit',
                     text: ''
                 }).on('click', function(event) {
-                    self.modePreviewEditHandler($item);
+                    if ($item.hasClass('item-vertical-view')) {
+                        var imgEdit = $item.find('> .itemEdit-vertical-container').find('> .objectInputs').find('> .inputContainer[data-field ="image"]')
+                            .find('> .inputSmall').find('> .objectId-edit').attr('href');
+                        var win = window.open(imgEdit, '_blank');
+                        win.focus();
+                    } else {
+                        self.modePreviewEditHandler($item);
+                    }
                     return false;
                 }).appendTo($controls);
                 
@@ -2192,17 +2211,34 @@ The HTML within the repeatable element must conform to these standards:
                 self.modePreviewEditHandler($item);
             },
 
+            /**
+             * Decide which is the default view to go to when editing an item
+             *
+             * @param {Element|jQuery object} item
+             * The item to edit.
+             */
             modePreviewEditHandler: function(item) {
                 var self = this;
                 var $item = $(item);
-                if (self.dom.$activeEditableView == self.dom.$viewCarousel) {
-                    self.modePreviewEdit($item);
+
+                if (self.dom.$defaultEditableView == self.dom.$viewCarousel) {
+                    self.modePreviewEdit($item, true);
                 }
-                if (self.dom.$activeEditableView == self.dom.$viewVertical) {
+                if (self.dom.$defaultEditableView == self.dom.$viewVertical) {
+                    // if already under vertical view, do nothing
+                    if ($item.hasClass('item-vertical-view')) {
+                        return;
+                    }
                     self.modePreviewEditVertical($item);
                 }
             },
 
+            /**
+             * Edit an item for mode=preview under Vertical view
+             *
+             * @param {Element|jQuery object} item
+             * The item to edit.
+             */
             modePreviewEditVertical: function(item) {
                 var self = this;
                 var $item = $(item);
@@ -2212,10 +2248,24 @@ The HTML within the repeatable element must conform to these standards:
                 }
 
                 self.modePreviewShowVertical();
+                self.verticalViewFocus($item);
+            },
+
+            /**
+             * Scroll screen to focus on item under editing
+             *
+             * @param {Element|jQuery object} item
+             * The item to focus.
+             * @param {int} index
+             * The index of the item under editing, used after indexer value changed
+             */
+            verticalViewFocus: function (item, index) {
+                var self = this;
+                var $item = (item == null && index >= 0) ? self.dom.$viewVertical.find('> li').eq(index) : $(item);
                 $item.focus();
 
                 // Scroll window to active item
-                var scrollPosition = $item.offset().top;
+                var scrollPosition = $item.offset().top - $item.height() / 2;
                 // Check if the header is overlaying at the top
                 // so we can scroll a little more to account for it
                 var headerHeight = $('.toolHeader').height();
@@ -2226,7 +2276,7 @@ The HTML within the repeatable element must conform to these standards:
             },
 
             /**
-             * Edit an item for mode=preview
+             * Edit an item for mode=preview under Gallery view
              *
              * @param {Element|jQuery object} item
              * The item to edit.
@@ -2245,27 +2295,25 @@ The HTML within the repeatable element must conform to these standards:
                 }
                 
                 self.dom.$carouselTarget.show();
-                
                 // If necessary create the container for editing this item
                 $editContainer = self.modePreviewCreateEditContainer($item);
-
                 // Load the item into the edit container
-                self.itemLoad($item, $editContainer).always(function(){
+                self.itemLoadOrMove($item, $editContainer).always(function(){
 
                     var editPosition;
                     var headerHeight;
                     var scrollPosition;
-                    
+
                     // Set the active tile in the carousel
                     self.carousel.setActive( $item.index() + 1 );
-                    
+
                     // Switch to the carousel view
                     self.modePreviewShowCarousel();
 
                     if (goToActiveTile !== false) {
-                        
+
                         self.carousel.goToActiveTile();
-                        
+
                         // Also scroll the page so we can see the carousel
                         editPosition = self.$element.closest('.inputContainer').offset();
                         scrollPosition = editPosition.top;
@@ -2282,7 +2330,7 @@ The HTML within the repeatable element must conform to these standards:
                             window.scrollTo(0, scrollPosition);
                         }
                     }
-                    
+
                     // Hide all the other slide edit forms
                     self.dom.$carouselTarget.find('.itemEdit').hide();
 
@@ -2301,7 +2349,7 @@ The HTML within the repeatable element must conform to these standards:
              *
              * @param Number direction
              * If a negative number edit the previous tile.
-             * Othersize edit the next tile.
+             * Otherwise edit the next tile.
              */
             modePreviewEditNext: function(direction) {
 
@@ -2427,7 +2475,7 @@ The HTML within the repeatable element must conform to these standards:
                 self.dom.$viewSwitcher.find('a').removeClass('view-switcher-active').filter('.view-switcher-grid').addClass('view-switcher-active');
                 self.dom.$viewGrid.show();
                 self.dom.$viewVertical.find('> li').removeClass('item-vertical-view');
-                self.dom.$viewGrid.find('.item-edit-form').hide();
+                self.dom.$viewGrid.find('.itemEdit-vertical-container').hide();
                 self.dom.$viewGrid.find('.repeatablePreviewControls-item').hide();
                 self.dom.$indexer.hide();
                 self.dom.$viewCarousel.hide();
@@ -2449,14 +2497,26 @@ The HTML within the repeatable element must conform to these standards:
                 self.dom.$viewVertical.show();
                 self.dom.$viewCarousel.hide();
                 self.dom.$indexer.show();
-
-                // Show edit form and add slide controls
+                // Add styling class
                 self.dom.$viewVertical.find('> li').addClass('item-vertical-view');
-                var $editForm = self.dom.$viewVertical.find('.item-edit-form');
-                $editForm.show();
-                var $controlButtons = self.dom.$viewVertical.find('.repeatablePreviewControls-item');
-                $controlButtons.show();
 
+                // Load itemEdit forms
+                self.dom.$viewVertical.find('> li').each(function () {
+                    var $item = $(this);
+                    var $itemEditContainer = $item.find('.itemEdit-vertical-container');
+                    if ($itemEditContainer.length == 0) {
+                        $itemEditContainer = $('<div/>', {'class': 'itemEdit-vertical-container'}).appendTo($item);
+                    }
+                    var $itemEdit = $itemEditContainer.find('> .objectInputs');
+                    if ($itemEdit.length == 0) {
+                        $item.data("currentView", "vertical");
+                        self.itemLoadOrMove($item, $itemEditContainer);
+                    }
+                    $itemEditContainer.show();
+                });
+
+                // var $controlButtons = self.dom.$viewVertical.find('.repeatablePreviewControls-item');
+                // $controlButtons.show();
             },
             
             /**
@@ -2475,8 +2535,8 @@ The HTML within the repeatable element must conform to these standards:
                 self.dom.$indexer.hide();
                 self.dom.$viewGrid.hide();
                 self.dom.$viewVertical.hide();
+                self.dom.$viewVertical.find('> li').removeClass('item-vertical-view');
                 self.dom.$viewCarousel.show();
-
                 // In some cases carousel update doesn't work if carousel is hidden,
                 // so we'll call update whenever we show the carousel to ensure
                 // it is displaying everything correctly

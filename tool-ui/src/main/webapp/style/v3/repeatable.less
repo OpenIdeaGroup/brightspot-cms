@@ -352,7 +352,7 @@
             z-index: 99;
           }
         }
-        .item-edit-form {
+        .itemEdit-vertical-container {
           min-height: 170px;
           position: absolute;
           float: left;
@@ -360,6 +360,14 @@
           right: 0;
           bottom: 0;
           top: 0;
+          > .objectInputs > .inputContainer {
+            &.state-changed {
+              > .inputSmall-text > .rte2-wrapper > .rte2-toolbar > li > a {
+                color: #949494 !important;
+                text-decoration-color: #949494 !important;
+              }
+            }
+          }
         }
         .item-add-controls {
           position: absolute;
